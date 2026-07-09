@@ -1,8 +1,10 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { Route } from "../lib/router";
 import { enqueueUploads, type UploadBatch } from "../lib/uploadQueue";
 import BatchTagPrompt from "./BatchTagPrompt";
 import { getStoredDisplayName } from "../lib/user";
+import { checkVisitUpdates } from "../lib/lastSeen";
+import { IconX } from "./icons";
 import ViewSwitcher from "./ViewSwitcher";
 import SettingsMenu from "./SettingsMenu";
 import UploadButton from "./UploadButton";
@@ -34,6 +36,11 @@ export default function Shell({
 }) {
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [tagPrompt, setTagPrompt] = useState<UploadBatch | null>(null);
+  const [newCount, setNewCount] = useState(0);
+
+  useEffect(() => {
+    void checkVisitUpdates().then((u) => setNewCount(u.newCount));
+  }, []);
 
   const startUpload = useCallback((images: File[]) => {
     const batch = enqueueUploads(images);
@@ -84,6 +91,24 @@ export default function Shell({
           </div>
         </div>
         <OfflineBanner />
+        {newCount > 0 && (
+          <div
+            role="status"
+            className="flex items-center justify-center gap-2 border-t border-amber-500/20 bg-amber-400/10 px-4 py-1.5 text-xs text-amber-300"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+            {newCount === 1
+              ? "1 new photo since your last visit"
+              : `${newCount} new photos since your last visit`}
+            <button
+              onClick={() => setNewCount(0)}
+              aria-label="Dismiss new photos notice"
+              className="ml-1 rounded p-1 text-amber-400/70 hover:text-amber-300"
+            >
+              <IconX width="0.8em" height="0.8em" />
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-3 pt-3 sm:px-4">

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { ApiImage } from "../../shared/types";
 import { mediaSrcSet, mediaUrl } from "../lib/api";
+import { getSessionSince } from "../lib/lastSeen";
+import { getStoredDisplayName } from "../lib/user";
 import { IconCheck } from "./icons";
 
 /** Sizes hint matching the grid's column breakpoints. */
@@ -22,6 +24,11 @@ export default function ImageTile({
   const [loaded, setLoaded] = useState(false);
 
   const alt = image.caption ?? image.originalName;
+  const since = getSessionSince();
+  const isNew =
+    since !== null &&
+    image.createdAt > since &&
+    image.uploadedBy !== getStoredDisplayName();
 
   return (
     <button
@@ -48,6 +55,14 @@ export default function ImageTile({
           loaded ? "opacity-100" : "opacity-0"
         } ${selected ? "scale-95" : "group-hover:scale-[1.03]"}`}
       />
+      {isNew && (
+        <span
+          className="absolute left-2 top-2 h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_0_3px_rgba(12,10,9,0.6)]"
+          title="New since your last visit"
+        >
+          <span className="sr-only">New since your last visit</span>
+        </span>
+      )}
       {selectable && (
         <span
           aria-hidden

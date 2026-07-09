@@ -4,6 +4,7 @@ import type {
   ApiImage,
   ApiImageDetail,
   ApiStats,
+  ApiUpdates,
   ImageFilter,
   Paginated,
 } from "../../shared/types";
@@ -98,6 +99,10 @@ export function listImages(opts: {
 
 export function getStats(): Promise<ApiStats> {
   return request("GET", "/api/stats");
+}
+
+export function getUpdates(since: number): Promise<ApiUpdates> {
+  return request("GET", `/api/updates?since=${since}`);
 }
 
 export function getImage(id: string): Promise<ApiImageDetail> {

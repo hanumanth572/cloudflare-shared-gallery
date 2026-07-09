@@ -76,3 +76,10 @@ export interface ApiStats {
   /** Free-plan R2 allowance. */
   bytesLimit: number;
 }
+
+export interface ApiUpdates {
+  /** Photos added by others since the given watermark. */
+  newCount: number;
+  /** Newest photo timestamp overall; the client's next watermark. */
+  latestCreatedAt: number | null;
+}
