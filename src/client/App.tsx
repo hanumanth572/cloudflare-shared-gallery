@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Login from "./views/Login";
 import AllImages from "./views/AllImages";
 import Collections from "./views/Collections";
+import RootView from "./views/RootView";
+import CollectionDetail from "./views/CollectionDetail";
 import DisplayNamePrompt from "./components/DisplayNamePrompt";
 import Shell from "./components/Shell";
 import { bootSession, type AuthState } from "./lib/session";
@@ -36,14 +38,14 @@ export default function App() {
   return (
     <Shell route={route} onNavigate={navigate} onLoggedOut={() => setAuth("login")}>
       {route.name === "photos" && <AllImages />}
-      {route.name === "root" && <AllImages />}
+      {route.name === "root" && (
+        <RootView onOpenCollection={(id) => navigate({ name: "collection", id })} />
+      )}
       {route.name === "collections" && (
         <Collections onOpenCollection={(id) => navigate({ name: "collection", id })} />
       )}
       {route.name === "collection" && (
-        <p className="py-20 text-center text-stone-500">
-          Collection detail arrives in the next phase.
-        </p>
+        <CollectionDetail id={route.id} onBack={() => navigate({ name: "collections" })} />
       )}
       {!namePromptDone && <DisplayNamePrompt onDone={() => setNamePromptDone(true)} />}
     </Shell>
