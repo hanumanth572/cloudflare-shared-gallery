@@ -17,9 +17,7 @@
     {
       "binding": "DB",
       "database_name": "shared-gallery-db",
-      // Placeholder until the remote database is created with
-      // `wrangler d1 create shared-gallery-db`. Local dev keys off the name.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "4fbfc48e-ae23-4630-9a48-9d6ffda5946a",
       "migrations_dir": "migrations"
     }
   ],
