@@ -12,7 +12,11 @@ router.get("/api/health", () => json({ ok: true }));
  * the shared router instance at module load.
  */
 import { registerAuthRoutes } from "./routes/auth";
+import { registerImageRoutes } from "./routes/images";
+import { registerMediaRoutes } from "./routes/media";
 registerAuthRoutes(router);
+registerImageRoutes(router);
+registerMediaRoutes(router);
 
 /** Paths that never require a session: health probe and the auth endpoints. */
 function isPublicPath(path: string): boolean {
@@ -55,8 +59,9 @@ export default {
       let response = await match.handler(ctx);
 
       // Sliding session renewal: attach the refreshed cookie when middleware
-      // decided the token is close to expiry.
-      if (ctx.renewCookie && !response.headers.has("Set-Cookie")) {
+      // decided the token is close to expiry. API responses only — media
+      // responses carry public Cache-Control and must stay cookie-free.
+      if (isApi && ctx.renewCookie && !response.headers.has("Set-Cookie")) {
         response = new Response(response.body, response);
         response.headers.append("Set-Cookie", ctx.renewCookie);
       }
