@@ -13,9 +13,11 @@ router.get("/api/health", () => json({ ok: true }));
  */
 import { registerAuthRoutes } from "./routes/auth";
 import { registerImageRoutes } from "./routes/images";
+import { registerCollectionRoutes } from "./routes/collections";
 import { registerMediaRoutes } from "./routes/media";
 registerAuthRoutes(router);
 registerImageRoutes(router);
+registerCollectionRoutes(router);
 registerMediaRoutes(router);
 
 /** Paths that never require a session: health probe and the auth endpoints. */
