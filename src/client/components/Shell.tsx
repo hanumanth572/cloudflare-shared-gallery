@@ -12,7 +12,7 @@ import DropZone from "./DropZone";
 import DisplayNamePrompt from "./DisplayNamePrompt";
 import BzwrdCredit from "./BzwrdCredit";
 import FooterStats from "./FooterStats";
-import { IconPlus } from "./icons";
+import { IconMarkGithub, IconPlus } from "./icons";
 
 /**
  * App chrome: compact top bar plus bottom navigation on mobile, single top
@@ -92,7 +92,21 @@ export default function Shell({
 
       <footer className="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 px-4 pb-28 pt-12 sm:pb-8">
         <FooterStats />
-        <BzwrdCredit />
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <a
+            href="https://github.com/Zesty0wl/cloudflare-shared-gallery"
+            target="_blank"
+            rel="noopener"
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-300"
+          >
+            <IconMarkGithub width="1.2em" height="1.2em" />
+            Open source on GitHub
+          </a>
+          <span className="text-stone-700" aria-hidden>
+            ·
+          </span>
+          <BzwrdCredit />
+        </div>
       </footer>
 
       {/* Mobile bottom navigation */}
