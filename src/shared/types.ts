@@ -15,6 +15,10 @@ export interface ApiImage {
   /** Doubles as alt text. */
   caption: string | null;
   uploadedBy: string | null;
+  /** EXIF capture time (epoch ms) when the original carried one. */
+  takenAt: number | null;
+  /** EXIF camera make/model when the original carried one. */
+  camera: string | null;
   createdAt: number;
   updatedAt: number;
 }

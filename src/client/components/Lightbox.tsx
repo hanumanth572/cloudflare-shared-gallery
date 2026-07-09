@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ApiImage, ApiImageDetail } from "../../shared/types";
 import * as api from "../lib/api";
 import {
   IconChevronLeft,
   IconChevronRight,
   IconDownload,
+  IconInfo,
   IconStack,
   IconTrash,
   IconX,
@@ -46,6 +47,7 @@ export default function Lightbox({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const [drag, setDrag] = useState<{ dx: number; dy: number } | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -91,9 +93,15 @@ export default function Lightbox({
     restoreFocusRef.current = document.activeElement;
     containerRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
+      const typing =
+        e.target instanceof HTMLElement &&
+        (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT");
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
+      } else if ((e.key === "i" || e.key === "I") && !typing) {
+        e.preventDefault();
+        setShowInfo((v) => !v);
       } else if (e.key === "ArrowLeft") {
         prev();
       } else if (e.key === "ArrowRight") {
@@ -218,6 +226,17 @@ export default function Lightbox({
           {index + 1} / {images.length}
         </span>
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowInfo((v) => !v)}
+            aria-label="Photo details"
+            aria-pressed={showInfo}
+            aria-keyshortcuts="i"
+            className={`flex h-11 w-11 items-center justify-center rounded-full text-lg hover:bg-white/10 ${
+              showInfo ? "bg-white/15 text-amber-400" : ""
+            }`}
+          >
+            <IconInfo width="0.9em" height="0.9em" />
+          </button>
           <a
             href={api.mediaUrl(image.mediaKey)}
             download={image.originalName}
@@ -250,6 +269,7 @@ export default function Lightbox({
       </div>
 
       {/* Image area — backdrop tap closes, tap on image does not */}
+      <div className="flex min-h-0 flex-1">
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
       <div
         className="relative flex min-h-0 flex-1 items-center justify-center"
@@ -290,6 +310,11 @@ export default function Lightbox({
             <IconChevronRight width="0.9em" height="0.9em" />
           </button>
         )}
+      </div>
+
+      {showInfo && (
+        <InfoPane image={image} detail={detail} onClose={() => setShowInfo(false)} />
+      )}
       </div>
 
       {/* Caption + metadata */}
@@ -348,5 +373,108 @@ export default function Lightbox({
         </div>
       </div>
     </div>
+  );
+}
+
+function formatBytes(n: number): string {
+  if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`;
+  return `${n} B`;
+}
+
+function formatWhen(ms: number): string {
+  return new Date(ms).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5 px-4 py-2">
+      <dt className="text-[11px] uppercase tracking-widest text-stone-500">{label}</dt>
+      <dd className="text-sm text-stone-200">{value}</dd>
+    </div>
+  );
+}
+
+/**
+ * Details pane: sidebar on desktop, bottom sheet on mobile. Toggled by the
+ * info button or the "i" key while a photo is in full view.
+ */
+function InfoPane({
+  image,
+  detail,
+  onClose,
+}: {
+  image: ApiImage;
+  detail: ApiImageDetail | null;
+  onClose: () => void;
+}) {
+  const type = image.contentType.split("/")[1]?.toUpperCase() ?? image.contentType;
+  const megapixels =
+    image.width && image.height ? (image.width * image.height) / 1_000_000 : null;
+  const memberships = detail?.collections ?? [];
+
+  return (
+    <aside
+      aria-label="Photo details"
+      className="fixed inset-x-0 bottom-0 z-10 max-h-[55%] overflow-y-auto rounded-t-2xl border-t border-stone-800 bg-stone-950/95 pb-4 backdrop-blur sm:static sm:z-auto sm:max-h-none sm:w-80 sm:shrink-0 sm:overflow-y-auto sm:rounded-none sm:border-l sm:border-t-0 sm:bg-stone-950/80"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+    >
+      <div className="flex items-center justify-between px-4 pb-1 pt-3">
+        <h3 className="text-sm font-medium text-stone-300">Details</h3>
+        <button
+          onClick={onClose}
+          aria-label="Close details"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-stone-400 hover:bg-white/10"
+        >
+          <IconX width="0.8em" height="0.8em" />
+        </button>
+      </div>
+      <dl>
+        <InfoRow label="Taken" value={image.takenAt ? formatWhen(image.takenAt) : "Not recorded"} />
+        {image.camera && <InfoRow label="Camera" value={image.camera} />}
+        <InfoRow
+          label="Resolution"
+          value={
+            image.width && image.height ? (
+              <>
+                {image.width} × {image.height}
+                {megapixels !== null && (
+                  <span className="text-stone-500"> · {megapixels.toFixed(1)} MP</span>
+                )}
+              </>
+            ) : (
+              "Unknown"
+            )
+          }
+        />
+        <InfoRow label="File" value={`${type} · ${formatBytes(image.sizeBytes)}`} />
+        <InfoRow label="Filename" value={<span className="break-all">{image.originalName}</span>} />
+        <InfoRow
+          label="Uploaded"
+          value={`${formatWhen(image.createdAt)} by ${image.uploadedBy ?? "Unknown"}`}
+        />
+        {memberships.length > 0 && (
+          <InfoRow
+            label="Collections"
+            value={
+              <span className="flex flex-wrap gap-1.5">
+                {memberships.map((m) => (
+                  <span
+                    key={m.collectionId}
+                    className="rounded-md bg-stone-800 px-2 py-0.5 text-xs text-stone-300"
+                    title={`Tagged by ${m.addedBy ?? "Unknown"}`}
+                  >
+                    {m.name}
+                  </span>
+                ))}
+              </span>
+            }
+          />
+        )}
+      </dl>
+    </aside>
   );
 }

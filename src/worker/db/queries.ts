@@ -17,6 +17,8 @@ interface ImageRow {
   height: number | null;
   caption: string | null;
   uploaded_by: string | null;
+  taken_at: number | null;
+  camera: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -49,6 +51,8 @@ export function rowToImage(row: ImageRow): ApiImage {
     height: row.height,
     caption: row.caption,
     uploadedBy: row.uploaded_by,
+    takenAt: row.taken_at,
+    camera: row.camera,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -110,14 +114,16 @@ export interface NewImage {
   width: number | null;
   height: number | null;
   uploadedBy: string | null;
+  takenAt: number | null;
+  camera: string | null;
   createdAt: number;
 }
 
 export async function insertImage(db: D1Database, img: NewImage): Promise<void> {
   await db
     .prepare(
-      `INSERT INTO images (id, r2_key, original_name, content_type, size_bytes, width, height, caption, uploaded_by, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+      `INSERT INTO images (id, r2_key, original_name, content_type, size_bytes, width, height, caption, uploaded_by, taken_at, camera, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
     )
     .bind(
       img.id,
@@ -128,6 +134,8 @@ export async function insertImage(db: D1Database, img: NewImage): Promise<void> 
       img.width,
       img.height,
       img.uploadedBy,
+      img.takenAt,
+      img.camera,
       img.createdAt,
       img.createdAt,
     )

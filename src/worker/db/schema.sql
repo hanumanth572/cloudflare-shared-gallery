@@ -50,3 +50,9 @@ CREATE INDEX idx_ic_collection ON image_collections(collection_id);
 CREATE INDEX idx_ic_image      ON image_collections(image_id);
 CREATE INDEX idx_images_created ON images(created_at DESC);
 CREATE INDEX idx_login_ip_time ON login_attempts(ip, attempted_at);
+
+-- Migration 0002: indexed EXIF capture metadata.
+-- Originals in R2 always keep their full metadata untouched; these columns
+-- surface the capture time and camera in the API and details pane.
+ALTER TABLE images ADD COLUMN taken_at INTEGER;
+ALTER TABLE images ADD COLUMN camera TEXT;

@@ -7,6 +7,7 @@ import {
   sanitizeOriginalName,
 } from "../lib/r2";
 import { extractDimensions, sniffImageType } from "../lib/imageMeta";
+import { EXIF_SCAN_BYTES, parseExif } from "../lib/exif";
 import {
   clampLimit,
   deleteImage,
@@ -80,6 +81,16 @@ async function upload(ctx: Ctx): Promise<Response> {
 
   const dims = await extractDimensions(ctx.env, key);
 
+  // Index capture metadata from the EXIF header (the R2 original keeps the
+  // full metadata regardless).
+  let exif = { takenAt: null as number | null, camera: null as string | null };
+  if (contentType === "image/jpeg") {
+    const head2 = await ctx.env.BUCKET.get(key, {
+      range: { offset: 0, length: Math.min(EXIF_SCAN_BYTES, stored.size) },
+    });
+    if (head2) exif = parseExif(new Uint8Array(await head2.arrayBuffer()));
+  }
+
   const now = Date.now();
   await insertImage(ctx.env.DB, {
     id,
@@ -90,6 +101,8 @@ async function upload(ctx: Ctx): Promise<Response> {
     width: dims?.width ?? null,
     height: dims?.height ?? null,
     uploadedBy: ctx.displayName,
+    takenAt: exif.takenAt,
+    camera: exif.camera,
     createdAt: now,
   });
 
