@@ -1,77 +1,124 @@
 import { useEffect } from "react";
-import type { UploadItem } from "./UploadButton";
+import {
+  clearCompleted,
+  dismiss,
+  retryFailed,
+  useUploadQueue,
+} from "../lib/uploadQueue";
+import { IconX } from "./icons";
 
-/** Per-file upload progress, floating above the bottom nav. */
-export default function UploadTray({
-  items,
-  onItems,
-}: {
-  items: UploadItem[];
-  onItems: (update: (prev: UploadItem[]) => UploadItem[]) => void;
-}) {
-  // Completed uploads fade out after a moment; errors stay until dismissed.
+/**
+ * Aggregate upload progress, floating above the bottom nav. Built for big
+ * batches: one overall bar ("87 of 300"), with only failures listed
+ * individually (each retryable).
+ */
+export default function UploadTray() {
+  const items = useUploadQueue();
+
+  const total = items.length;
+  const done = items.filter((i) => i.status === "done").length;
+  const failed = items.filter((i) => i.status === "error");
+  const inFlight = total - done - failed.length;
+  const overall = total > 0 ? items.reduce((sum, i) => sum + i.progress, 0) / total : 0;
+
+  // When everything succeeded, let the tray linger briefly then clear.
   useEffect(() => {
-    if (!items.some((i) => i.status === "done")) return;
-    const t = setTimeout(() => {
-      onItems((prev) => prev.filter((i) => i.status !== "done"));
-    }, 2500);
+    if (total === 0 || inFlight > 0 || failed.length > 0) return;
+    const t = setTimeout(clearCompleted, 2500);
     return () => clearTimeout(t);
-  }, [items, onItems]);
+  }, [total, inFlight, failed.length]);
 
-  if (items.length === 0) return null;
+  if (total === 0) return null;
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-3 z-40 flex flex-col gap-2 sm:left-auto sm:w-80"
+      className="fixed inset-x-3 z-40 sm:left-auto sm:w-96"
       style={{ bottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
       role="status"
       aria-live="polite"
     >
-      {items.map((item) => (
-        <div
-          key={item.key}
-          className="pointer-events-auto rounded-xl border border-stone-800 bg-stone-900/95 px-3 py-2 shadow-lg backdrop-blur"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-xs text-stone-300">{item.name}</span>
-            {item.status === "uploading" && (
-              <span className="text-xs tabular-nums text-stone-500">
-                {Math.round(item.progress * 100)}%
+      <div className="rounded-xl border border-stone-800 bg-stone-900/95 px-4 py-3 shadow-lg backdrop-blur">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-stone-200">
+            {inFlight > 0 ? (
+              <>
+                Uploading <span className="tabular-nums">{done + failed.length + 1}</span> of{" "}
+                <span className="tabular-nums">{total}</span>
+                {failed.length > 0 && (
+                  <span className="text-rose-400"> · {failed.length} failed</span>
+                )}
+              </>
+            ) : failed.length > 0 ? (
+              <>
+                <span className="tabular-nums">{done}</span> uploaded ·{" "}
+                <span className="text-rose-400">
+                  <span className="tabular-nums">{failed.length}</span> failed
+                </span>
+              </>
+            ) : (
+              <span className="text-emerald-400">
+                {done === 1 ? "Photo uploaded" : `${done} photos uploaded`}
               </span>
             )}
-            {item.status === "done" && <span className="text-xs text-emerald-400">Uploaded</span>}
-            {item.status === "error" && (
-              <span className="flex items-center gap-2">
+          </span>
+          {inFlight === 0 && (
+            <div className="flex items-center gap-2">
+              {failed.length > 0 && (
                 <button
-                  onClick={item.retry}
+                  onClick={() => retryFailed()}
                   className="text-xs font-medium text-amber-400 hover:text-amber-300"
+                >
+                  Retry all
+                </button>
+              )}
+              <button
+                onClick={() => dismiss()}
+                aria-label="Dismiss upload status"
+                className="text-xs text-stone-500 hover:text-stone-300"
+              >
+                <IconX />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stone-800">
+          <div
+            className={`h-full rounded-full transition-[width] duration-300 ${
+              inFlight === 0 && failed.length === 0 ? "bg-emerald-400" : "bg-amber-400"
+            }`}
+            style={{ width: `${Math.round(overall * 100)}%` }}
+          />
+        </div>
+
+        {failed.length > 0 && (
+          <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto">
+            {failed.map((item) => (
+              <li key={item.key} className="flex items-center justify-between gap-2 text-xs">
+                <span className="min-w-0 flex-1 truncate text-stone-400" title={item.name}>
+                  {item.name}
+                </span>
+                <span className="max-w-40 truncate text-rose-400" title={item.error}>
+                  {item.error}
+                </span>
+                <button
+                  onClick={() => retryFailed(item.key)}
+                  className="shrink-0 font-medium text-amber-400 hover:text-amber-300"
                 >
                   Retry
                 </button>
                 <button
-                  onClick={() => onItems((prev) => prev.filter((i) => i.key !== item.key))}
+                  onClick={() => dismiss(item.key)}
                   aria-label={`Dismiss failed upload ${item.name}`}
-                  className="text-xs text-stone-500 hover:text-stone-300"
+                  className="shrink-0 text-stone-500 hover:text-stone-300"
                 >
-                  ✕
+                  <IconX />
                 </button>
-              </span>
-            )}
-          </div>
-          {item.status === "error" ? (
-            <p className="mt-1 text-xs text-rose-400">{item.error}</p>
-          ) : (
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-stone-800">
-              <div
-                className={`h-full rounded-full transition-[width] duration-200 ${
-                  item.status === "done" ? "bg-emerald-400" : "bg-amber-400"
-                }`}
-                style={{ width: `${Math.round(item.progress * 100)}%` }}
-              />
-            </div>
-          )}
-        </div>
-      ))}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,97 +1,33 @@
 import { useRef, useState, type ReactNode } from "react";
-import { uploadImage } from "../lib/api";
-import { emit } from "../lib/events";
-import { getStoredDisplayName } from "../lib/user";
-import DisplayNamePrompt from "./DisplayNamePrompt";
-
-export interface UploadItem {
-  key: string;
-  name: string;
-  progress: number;
-  status: "uploading" | "done" | "error";
-  error?: string;
-  retry?: () => void;
-}
+import { IconDeviceCamera, IconImage } from "./icons";
 
 /**
- * Multi-file upload control. `accept="image/*"` opens the photo library
- * with multi-select; `withCameraSheet` adds an action sheet offering direct
- * camera capture (`capture="environment"`) on mobile. Uploads report
- * per-file progress through onItems (rendered by UploadTray).
+ * Upload trigger. `accept="image/*"` opens the photo library with
+ * multi-select; `withCameraSheet` adds an action sheet offering direct
+ * camera capture (`capture="environment"`) on mobile. Chosen files are
+ * handed to onFiles (the Shell gates on display name and feeds the shared
+ * upload queue).
  */
 export default function UploadButton({
-  onItems,
+  onFiles,
   className,
   withCameraSheet = false,
   children,
 }: {
-  onItems: (update: (prev: UploadItem[]) => UploadItem[]) => void;
+  onFiles: (files: File[]) => void;
   className?: string;
   withCameraSheet?: boolean;
   children: ReactNode;
 }) {
   const libraryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  function startUpload(files: File[]) {
-    for (const file of files) {
-      const key = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
-      const run = () => {
-        onItems((prev) => [
-          ...prev.filter((i) => i.key !== key),
-          { key, name: file.name, progress: 0, status: "uploading" },
-        ]);
-        uploadImage(file, (fraction) => {
-          onItems((prev) =>
-            prev.map((i) => (i.key === key ? { ...i, progress: fraction } : i)),
-          );
-        })
-          .then(() => {
-            onItems((prev) =>
-              prev.map((i) => (i.key === key ? { ...i, progress: 1, status: "done" } : i)),
-            );
-            emit("images-changed");
-          })
-          .catch((err: unknown) => {
-            const offline = !navigator.onLine;
-            onItems((prev) =>
-              prev.map((i) =>
-                i.key === key
-                  ? {
-                      ...i,
-                      status: "error",
-                      error: offline
-                        ? "You're offline — uploads need a connection"
-                        : err instanceof Error
-                          ? err.message
-                          : "Upload failed",
-                      retry: run,
-                    }
-                  : i,
-              ),
-            );
-          });
-      };
-      run();
-    }
-  }
-
-  function onFilesChosen(files: File[]) {
-    if (files.length === 0) return;
-    // Attribution must be set before the first upload (PRD section 6).
-    if (!getStoredDisplayName()) {
-      setPendingFiles(files);
-      return;
-    }
-    startUpload(files);
-  }
 
   const inputProps = {
     className: "hidden",
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      onFilesChosen(Array.from(e.target.files ?? []));
+      const files = Array.from(e.target.files ?? []);
+      if (files.length > 0) onFiles(files);
       e.target.value = "";
     },
   };
@@ -129,18 +65,18 @@ export default function UploadButton({
                 setSheetOpen(false);
                 libraryRef.current?.click();
               }}
-              className="block w-full min-h-12 rounded-xl px-4 text-left text-base text-stone-100 hover:bg-stone-800"
+              className="flex w-full min-h-12 items-center gap-3 rounded-xl px-4 text-left text-base text-stone-100 hover:bg-stone-800"
             >
-              🖼️ Choose from library
+              <IconImage className="text-stone-400" /> Choose from library
             </button>
             <button
               onClick={() => {
                 setSheetOpen(false);
                 cameraRef.current?.click();
               }}
-              className="block w-full min-h-12 rounded-xl px-4 text-left text-base text-stone-100 hover:bg-stone-800"
+              className="flex w-full min-h-12 items-center gap-3 rounded-xl px-4 text-left text-base text-stone-100 hover:bg-stone-800"
             >
-              📸 Take a photo
+              <IconDeviceCamera className="text-stone-400" /> Take a photo
             </button>
             <button
               onClick={() => setSheetOpen(false)}
@@ -150,17 +86,6 @@ export default function UploadButton({
             </button>
           </div>
         </div>
-      )}
-
-      {pendingFiles && (
-        <DisplayNamePrompt
-          allowSkip={false}
-          onDone={(name) => {
-            const files = pendingFiles;
-            setPendingFiles(null);
-            if (name && files) startUpload(files);
-          }}
-        />
       )}
     </>
   );
