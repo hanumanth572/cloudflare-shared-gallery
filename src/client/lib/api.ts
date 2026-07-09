@@ -3,6 +3,7 @@ import type {
   ApiCollectionDetail,
   ApiImage,
   ApiImageDetail,
+  ApiStats,
   ImageFilter,
   Paginated,
 } from "../../shared/types";
@@ -85,12 +86,18 @@ export function listImages(opts: {
   filter?: ImageFilter;
   cursor?: string | null;
   limit?: number;
+  uploader?: string;
 }): Promise<Paginated<ApiImage>> {
   const params = new URLSearchParams();
   params.set("filter", opts.filter ?? "all");
   if (opts.cursor) params.set("cursor", opts.cursor);
   if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.uploader) params.set("uploader", opts.uploader);
   return request("GET", `/api/images?${params}`);
+}
+
+export function getStats(): Promise<ApiStats> {
+  return request("GET", "/api/stats");
 }
 
 export function getImage(id: string): Promise<ApiImageDetail> {

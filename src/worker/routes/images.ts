@@ -116,10 +116,12 @@ async function list(ctx: Ctx): Promise<Response> {
   if (filterRaw !== "all" && filterRaw !== "untagged") {
     return error("filter must be 'all' or 'untagged'", 400);
   }
+  const uploader = ctx.url.searchParams.get("uploader")?.trim().slice(0, 40) || null;
   const page = await listImages(ctx.env.DB, {
     filter: filterRaw as ImageFilter,
     cursor: ctx.url.searchParams.get("cursor"),
     limit: clampLimit(ctx.url.searchParams.get("limit")),
+    uploader,
   });
   return json(page);
 }

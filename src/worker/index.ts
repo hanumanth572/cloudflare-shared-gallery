@@ -15,10 +15,12 @@ import { registerAuthRoutes } from "./routes/auth";
 import { registerImageRoutes } from "./routes/images";
 import { registerCollectionRoutes } from "./routes/collections";
 import { registerMediaRoutes } from "./routes/media";
+import { registerStatsRoutes } from "./routes/stats";
 registerAuthRoutes(router);
 registerImageRoutes(router);
 registerCollectionRoutes(router);
 registerMediaRoutes(router);
+registerStatsRoutes(router);
 
 /** Paths that never require a session: health probe and the auth endpoints. */
 function isPublicPath(path: string): boolean {

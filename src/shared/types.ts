@@ -66,3 +66,13 @@ export type ImageFilter = "all" | "untagged";
 export interface ApiError {
   error: string;
 }
+
+export interface ApiStats {
+  imageCount: number;
+  /** Distinct attribution names across uploads, tagging, and collections. */
+  contributorCount: number;
+  /** Sum of stored original sizes (the R2 bucket holds originals only). */
+  bytesUsed: number;
+  /** Free-plan R2 allowance. */
+  bytesLimit: number;
+}

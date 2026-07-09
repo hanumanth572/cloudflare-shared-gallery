@@ -11,6 +11,7 @@ import OfflineBanner from "./OfflineBanner";
 import DropZone from "./DropZone";
 import DisplayNamePrompt from "./DisplayNamePrompt";
 import BzwrdCredit from "./BzwrdCredit";
+import FooterStats from "./FooterStats";
 import { IconPlus } from "./icons";
 
 /**
@@ -89,7 +90,8 @@ export default function Shell({
         {children}
       </main>
 
-      <footer className="mx-auto flex w-full max-w-7xl justify-center px-4 pb-28 pt-12 sm:pb-8">
+      <footer className="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 px-4 pb-28 pt-12 sm:pb-8">
+        <FooterStats />
         <BzwrdCredit />
       </footer>
 

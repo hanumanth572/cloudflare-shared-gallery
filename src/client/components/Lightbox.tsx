@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ApiImage, ApiImageDetail } from "../../shared/types";
 import * as api from "../lib/api";
+import { navigateTo } from "../lib/router";
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -366,7 +367,17 @@ export default function Lightbox({
           </p>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-stone-500">
-          <span>Uploaded by {uploadedBy ?? "Unknown"}</span>
+          {uploadedBy ? (
+            <button
+              onClick={() => navigateTo({ name: "uploader", who: uploadedBy })}
+              className="rounded underline-offset-2 hover:text-stone-300 hover:underline"
+              aria-label={`See all photos uploaded by ${uploadedBy}`}
+            >
+              Uploaded by {uploadedBy}
+            </button>
+          ) : (
+            <span>Uploaded by Unknown</span>
+          )}
           <span>{new Date(image.createdAt).toLocaleDateString()}</span>
           {memberships.length > 0 && (
             <span className="truncate">In {memberships.map((m) => m.name).join(", ")}</span>
@@ -487,7 +498,20 @@ function InfoPane({
             month: "short",
             year: "numeric",
           })}
-          <span className="text-stone-400"> by {image.uploadedBy ?? "Unknown"}</span>
+          {image.uploadedBy ? (
+            <>
+              {" by "}
+              <button
+                onClick={() => navigateTo({ name: "uploader", who: image.uploadedBy! })}
+                className="rounded text-stone-300 underline decoration-stone-600 underline-offset-2 hover:text-amber-400"
+                aria-label={`See all photos uploaded by ${image.uploadedBy}`}
+              >
+                {image.uploadedBy}
+              </button>
+            </>
+          ) : (
+            <span className="text-stone-400"> by Unknown</span>
+          )}
         </Fact>
         <Fact label="Filename">
           <span className="font-mono text-xs text-stone-300" title={image.originalName}>

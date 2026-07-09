@@ -157,25 +157,35 @@ export async function getImageByKey(db: D1Database, r2Key: string): Promise<ApiI
 
 export async function listImages(
   db: D1Database,
-  opts: { filter: ImageFilter; cursor: string | null; limit: number },
+  opts: {
+    filter: ImageFilter;
+    cursor: string | null;
+    limit: number;
+    /** Restrict to photos uploaded by this display name. */
+    uploader?: string | null;
+  },
 ): Promise<Paginated<ApiImage>> {
   const after = opts.cursor ? decodeCursor(opts.cursor) : null;
-  const untaggedJoin =
-    opts.filter === "untagged"
-      ? `LEFT JOIN image_collections ic ON ic.image_id = i.id`
-      : "";
-  const untaggedWhere = opts.filter === "untagged" ? `ic.image_id IS NULL` : `1 = 1`;
-  const cursorWhere = after ? `AND (i.created_at < ?1 OR (i.created_at = ?1 AND i.id < ?2))` : "";
+  const join =
+    opts.filter === "untagged" ? `LEFT JOIN image_collections ic ON ic.image_id = i.id` : "";
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (opts.filter === "untagged") where.push(`ic.image_id IS NULL`);
+  if (opts.uploader) {
+    where.push(`i.uploaded_by = ?`);
+    binds.push(opts.uploader);
+  }
+  if (after) {
+    where.push(`(i.created_at < ? OR (i.created_at = ? AND i.id < ?))`);
+    binds.push(after.t, after.t, after.i);
+  }
+  binds.push(opts.limit + 1);
 
-  const sql = `SELECT i.* FROM images i ${untaggedJoin}
-     WHERE ${untaggedWhere} ${cursorWhere}
+  const sql = `SELECT i.* FROM images i ${join}
+     ${where.length > 0 ? `WHERE ${where.join(" AND ")}` : ""}
      ORDER BY i.created_at DESC, i.id DESC
-     LIMIT ${after ? "?3" : "?1"}`;
-  const stmt = after
-    ? db.prepare(sql).bind(after.t, after.i, opts.limit + 1)
-    : db.prepare(sql).bind(opts.limit + 1);
-
-  const { results } = await stmt.all<ImageRow>();
+     LIMIT ?`;
+  const { results } = await db.prepare(sql).bind(...binds).all<ImageRow>();
   return paginate(results, opts.limit);
 }
 

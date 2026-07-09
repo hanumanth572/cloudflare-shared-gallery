@@ -4,6 +4,7 @@ import AllImages from "./views/AllImages";
 import Collections from "./views/Collections";
 import RootView from "./views/RootView";
 import CollectionDetail from "./views/CollectionDetail";
+import UploaderView from "./views/UploaderView";
 import DisplayNamePrompt from "./components/DisplayNamePrompt";
 import OfflineBanner from "./components/OfflineBanner";
 import Shell from "./components/Shell";
@@ -54,6 +55,9 @@ export default function App() {
       )}
       {route.name === "collection" && (
         <CollectionDetail id={route.id} onBack={() => navigate({ name: "collections" })} />
+      )}
+      {route.name === "uploader" && (
+        <UploaderView who={route.who} onBack={() => navigate({ name: "photos" })} />
       )}
       {!namePromptDone && <DisplayNamePrompt onDone={() => setNamePromptDone(true)} />}
     </Shell>

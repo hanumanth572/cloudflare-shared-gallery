@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
-/** The four client routes: Home (root explorer), Photos, Collections, one collection. */
+/** Client routes: Home, Photos, Collections, one collection, one person. */
 export type Route =
   | { name: "root" }
   | { name: "photos" }
   | { name: "collections" }
-  | { name: "collection"; id: string };
+  | { name: "collection"; id: string }
+  | { name: "uploader"; who: string };
 
 export function parsePath(pathname: string): Route {
   const parts = pathname.split("/").filter(Boolean);
@@ -13,6 +14,9 @@ export function parsePath(pathname: string): Route {
   if (parts[0] === "collections") {
     if (parts[1]) return { name: "collection", id: decodeURIComponent(parts[1]) };
     return { name: "collections" };
+  }
+  if (parts[0] === "by" && parts[1]) {
+    return { name: "uploader", who: decodeURIComponent(parts[1]) };
   }
   return { name: "root" };
 }
@@ -27,7 +31,18 @@ export function routePath(route: Route): string {
       return "/collections";
     case "collection":
       return `/collections/${encodeURIComponent(route.id)}`;
+    case "uploader":
+      return `/by/${encodeURIComponent(route.who)}`;
   }
+}
+
+/**
+ * Imperative navigation for deeply nested components (e.g. the lightbox's
+ * "Uploaded by" link). Pushes history and pokes every useRoute hook.
+ */
+export function navigateTo(route: Route): void {
+  history.pushState(null, "", routePath(route));
+  window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
 /** Tiny History-API router hook. */

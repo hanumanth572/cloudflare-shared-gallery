@@ -6,7 +6,8 @@ import { subscribe } from "./events";
 export type FeedSource =
   | { kind: "all" }
   | { kind: "untagged" }
-  | { kind: "collection"; id: string };
+  | { kind: "collection"; id: string }
+  | { kind: "uploader"; who: string };
 
 export interface ImageFeed {
   images: ApiImage[];
@@ -34,7 +35,12 @@ export function useImageFeed(source: FeedSource): ImageFeed {
   const [error, setError] = useState<string | null>(null);
   const generation = useRef(0);
 
-  const sourceKey = source.kind === "collection" ? `collection:${source.id}` : source.kind;
+  const sourceKey =
+    source.kind === "collection"
+      ? `collection:${source.id}`
+      : source.kind === "uploader"
+        ? `uploader:${source.who}`
+        : source.kind;
 
   const fetchPage = useCallback(
     async (after: string | null, replace: boolean) => {
@@ -46,6 +52,13 @@ export function useImageFeed(source: FeedSource): ImageFeed {
         if (source.kind === "collection") {
           const detail = await api.getCollection(source.id, { cursor: after, limit: PAGE_SIZE });
           page = { items: detail.images, cursor: detail.cursor };
+        } else if (source.kind === "uploader") {
+          page = await api.listImages({
+            filter: "all",
+            uploader: source.who,
+            cursor: after,
+            limit: PAGE_SIZE,
+          });
         } else {
           page = await api.listImages({
             filter: source.kind === "all" ? "all" : "untagged",
