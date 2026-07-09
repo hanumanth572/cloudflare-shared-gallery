@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ApiImage } from "../../shared/types";
 import { mediaSrcSet, mediaUrl } from "../lib/api";
+import { IconCheck } from "./icons";
 
 /** Sizes hint matching the grid's column breakpoints. */
 export const TILE_SIZES =
@@ -51,13 +52,13 @@ export default function ImageTile({
       {selectable && (
         <span
           aria-hidden
-          className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold transition ${
+          className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border text-xs transition ${
             selected
               ? "border-amber-400 bg-amber-400 text-stone-950"
               : "border-white/70 bg-black/30 text-transparent"
           }`}
         >
-          ✓
+          <IconCheck width="0.9em" height="0.9em" />
         </span>
       )}
     </button>

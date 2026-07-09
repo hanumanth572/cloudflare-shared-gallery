@@ -6,6 +6,7 @@ import Lightbox from "./Lightbox";
 import CollectionPicker from "./CollectionPicker";
 import SelectionBar from "./SelectionBar";
 import EmptyState from "./EmptyState";
+import { IconAlert } from "./icons";
 
 export interface SelectionContext {
   selectedIds: Set<string>;
@@ -61,7 +62,7 @@ export default function PhotoSection({
   if (feed.error && feed.images.length === 0) {
     return (
       <EmptyState
-        icon="⚠️"
+        icon={<IconAlert />}
         title="Couldn't load photos"
         message={feed.error}
         action={

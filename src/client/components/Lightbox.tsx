@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiImage, ApiImageDetail } from "../../shared/types";
 import * as api from "../lib/api";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconDownload,
+  IconStack,
+  IconTrash,
+  IconX,
+} from "./icons";
 
 /**
  * Full-screen lightbox over the current view's image set.
@@ -204,7 +212,7 @@ export default function Lightbox({
           aria-label="Close"
           className="flex h-11 w-11 items-center justify-center rounded-full text-xl hover:bg-white/10"
         >
-          ✕
+          <IconX width="0.9em" height="0.9em" />
         </button>
         <span className="text-sm tabular-nums text-stone-400">
           {index + 1} / {images.length}
@@ -216,7 +224,7 @@ export default function Lightbox({
             aria-label="Download original"
             className="flex h-11 w-11 items-center justify-center rounded-full text-lg hover:bg-white/10"
           >
-            ⤓
+            <IconDownload width="0.9em" height="0.9em" />
           </a>
           {onEditCollections && (
             <button
@@ -225,7 +233,7 @@ export default function Lightbox({
               aria-label="Add to collections"
               className="flex h-11 w-11 items-center justify-center rounded-full text-lg hover:bg-white/10 disabled:opacity-40"
             >
-              🗂
+              <IconStack width="0.9em" height="0.9em" />
             </button>
           )}
           <button
@@ -236,7 +244,7 @@ export default function Lightbox({
               confirmingDelete ? "bg-rose-600/80 text-sm font-medium text-white" : "w-11"
             }`}
           >
-            {confirmingDelete ? "Delete?" : "🗑"}
+            {confirmingDelete ? "Delete?" : <IconTrash width="0.9em" height="0.9em" />}
           </button>
         </div>
       </div>
@@ -270,7 +278,7 @@ export default function Lightbox({
             aria-label="Previous photo"
             className="absolute left-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-xl text-white hover:bg-black/70 sm:flex"
           >
-            ‹
+            <IconChevronLeft width="0.9em" height="0.9em" />
           </button>
         )}
         {index < images.length - 1 && (
@@ -279,7 +287,7 @@ export default function Lightbox({
             aria-label="Next photo"
             className="absolute right-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-xl text-white hover:bg-black/70 sm:flex"
           >
-            ›
+            <IconChevronRight width="0.9em" height="0.9em" />
           </button>
         )}
       </div>

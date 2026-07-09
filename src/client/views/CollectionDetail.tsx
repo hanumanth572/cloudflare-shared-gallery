@@ -5,6 +5,7 @@ import { emit, subscribe } from "../lib/events";
 import { useImageFeed } from "../lib/useImageFeed";
 import PhotoSection from "../components/PhotoSection";
 import EmptyState from "../components/EmptyState";
+import { IconStack } from "../components/icons";
 
 /** One collection: header with rename/cover/delete controls plus its photos. */
 export default function CollectionDetail({
@@ -40,7 +41,7 @@ export default function CollectionDetail({
   if (missing) {
     return (
       <EmptyState
-        icon="🗂"
+        icon={<IconStack />}
         title="Collection not found"
         message="It may have been deleted by another member."
         action={
@@ -205,7 +206,7 @@ export default function CollectionDetail({
         feed={feed}
         emptyState={
           <EmptyState
-            icon="🗂"
+            icon={<IconStack />}
             title="Nothing in here yet"
             message="Select photos in Home or Photos and choose “Add to collection” to file them here."
           />

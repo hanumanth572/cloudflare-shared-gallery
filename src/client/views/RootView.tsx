@@ -6,6 +6,7 @@ import { useImageFeed } from "../lib/useImageFeed";
 import CollectionTile from "../components/CollectionTile";
 import PhotoSection from "../components/PhotoSection";
 import EmptyState from "../components/EmptyState";
+import { IconImage } from "../components/icons";
 
 /**
  * Root (default home): a file-explorer style view — collection folders
@@ -39,7 +40,7 @@ export default function RootView({
   if (noCollections && noLoosePhotos) {
     return (
       <EmptyState
-        icon="🖼️"
+        icon={<img src="/icons/icon-192.png" alt="" className="mx-auto h-16 w-16 rounded-2xl" />}
         title="Your gallery is empty"
         message="Tap the + button to upload the first photos. Anyone with the shared password can add theirs too."
       />
@@ -72,13 +73,13 @@ export default function RootView({
           emptyState={
             noCollections ? (
               <EmptyState
-                icon="📷"
+                icon={<IconImage />}
                 title="No photos yet"
                 message="Tap the + button to add the first photos to the gallery."
               />
             ) : (
               <p className="rounded-xl border border-dashed border-stone-800 px-4 py-8 text-center text-sm text-stone-500">
-                Everything is filed away — no loose photos. New uploads appear here until they're
+                Everything is filed away, no loose photos. New uploads appear here until they're
                 added to a collection.
               </p>
             )

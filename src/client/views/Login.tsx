@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, login } from "../lib/api";
+import BzwrdCredit from "../components/BzwrdCredit";
 
 export default function Login({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
@@ -29,14 +30,16 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <div
-      className="flex min-h-full flex-col items-center justify-center bg-stone-950 px-6 text-stone-100"
+      className="relative flex min-h-full flex-col items-center justify-center bg-stone-950 px-6 text-stone-100"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-rose-500 text-3xl shadow-lg">
-            <span aria-hidden>🖼️</span>
-          </div>
+          <img
+            src="/icons/icon-192.png"
+            alt=""
+            className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-lg"
+          />
           <h1 className="text-2xl font-semibold tracking-tight">Shared Gallery</h1>
           <p className="mt-1 text-sm text-stone-400">Enter the shared password to continue</p>
         </div>
@@ -68,6 +71,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
             </p>
           )}
         </form>
+      </div>
+      <div className="absolute bottom-6">
+        <BzwrdCredit />
       </div>
     </div>
   );

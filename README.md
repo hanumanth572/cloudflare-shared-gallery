@@ -1,8 +1,9 @@
 # Shared Gallery
 
 A 100% serverless, private, shared image gallery running entirely on Cloudflare. Anyone
-who knows the shared password can upload photos, browse them, organise them into
-collections (virtual folders — a photo can live in many at once), and see who added
+who knows the shared password can upload photos (file picker, camera, or drag and
+drop of hundreds of files and folders at once), browse them, organise them into
+collections (virtual folders: a photo can live in many at once), and see who added
 what. Mobile is a first-class citizen: the app is an installable PWA with camera
 capture, swipe navigation, and a bottom nav.
 

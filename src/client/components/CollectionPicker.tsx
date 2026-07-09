@@ -144,7 +144,7 @@ export default function CollectionPicker({
           )}
           {collections?.length === 0 && (
             <p className="px-3 py-6 text-center text-sm text-stone-500">
-              No collections yet — create the first one below.
+              No collections yet. Create the first one below.
             </p>
           )}
           {collections?.map((c) => (

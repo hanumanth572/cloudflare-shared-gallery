@@ -1,9 +1,11 @@
+import type { ComponentType, SVGProps } from "react";
 import type { Route } from "../lib/router";
+import { IconHome, IconImage, IconStack } from "./icons";
 
-const TABS: { route: Route; label: string; icon: string }[] = [
-  { route: { name: "root" }, label: "Home", icon: "⌂" },
-  { route: { name: "photos" }, label: "Photos", icon: "▦" },
-  { route: { name: "collections" }, label: "Collections", icon: "🗂" },
+const TABS: { route: Route; label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
+  { route: { name: "root" }, label: "Home", Icon: IconHome },
+  { route: { name: "photos" }, label: "Photos", Icon: IconImage },
+  { route: { name: "collections" }, label: "Collections", Icon: IconStack },
 ];
 
 function isActive(tab: Route, current: Route): boolean {
@@ -55,13 +57,11 @@ export default function ViewSwitcher({
             key={tab.label}
             onClick={() => onNavigate(tab.route)}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-12 min-w-16 flex-col items-center justify-center gap-0.5 rounded-lg text-xs ${
+            className={`flex min-h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-lg text-xs ${
               active ? "text-amber-400" : "text-stone-400"
             }`}
           >
-            <span className="text-lg leading-none" aria-hidden>
-              {tab.icon}
-            </span>
+            <tab.Icon className="text-lg" width="1.25em" height="1.25em" />
             {tab.label}
           </button>
         );

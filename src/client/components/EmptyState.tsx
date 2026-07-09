@@ -6,14 +6,14 @@ export default function EmptyState({
   message,
   action,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   message: string;
   action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
-      <div className="text-4xl" aria-hidden>
+      <div className="text-4xl text-stone-600" aria-hidden>
         {icon}
       </div>
       <h2 className="text-lg font-medium text-stone-200">{title}</h2>

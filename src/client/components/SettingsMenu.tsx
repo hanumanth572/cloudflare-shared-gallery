@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { logout } from "../lib/api";
 import { getStoredDisplayName } from "../lib/user";
 import DisplayNamePrompt from "./DisplayNamePrompt";
+import { IconGear } from "./icons";
 
 /** Small settings control: change display name, log out. */
 export default function SettingsMenu({ onLoggedOut }: { onLoggedOut: () => void }) {
@@ -28,7 +29,7 @@ export default function SettingsMenu({ onLoggedOut }: { onLoggedOut: () => void 
         aria-expanded={open}
         className="flex h-11 w-11 items-center justify-center rounded-full text-lg text-stone-400 hover:bg-stone-900 hover:text-stone-200"
       >
-        ⚙
+        <IconGear />
       </button>
       {open && (
         <div className="absolute right-0 top-12 z-40 w-56 rounded-xl border border-stone-800 bg-stone-900 p-1.5 shadow-xl">

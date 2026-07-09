@@ -4,6 +4,7 @@ import * as api from "../lib/api";
 import { subscribe } from "../lib/events";
 import CollectionTile from "../components/CollectionTile";
 import EmptyState from "../components/EmptyState";
+import { IconAlert, IconStack } from "../components/icons";
 
 /** Collections: a grid of folder tiles only. */
 export default function Collections({
@@ -39,7 +40,7 @@ export default function Collections({
   if (error && !collections) {
     return (
       <EmptyState
-        icon="⚠️"
+        icon={<IconAlert />}
         title="Couldn't load collections"
         message={error}
         action={
@@ -67,9 +68,9 @@ export default function Collections({
   if (collections.length === 0) {
     return (
       <EmptyState
-        icon="🗂"
+        icon={<IconStack />}
         title="No collections yet"
-        message="Collections are virtual folders — a photo can live in as many as you like. Select photos in any grid and choose “Add to collection” to create one."
+        message="Collections are virtual folders, so a photo can live in as many as you like. Select photos in any grid and choose “Add to collection” to create one."
       />
     );
   }

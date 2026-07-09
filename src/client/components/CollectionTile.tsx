@@ -1,5 +1,6 @@
 import type { ApiCollection } from "../../shared/types";
 import { mediaUrl } from "../lib/api";
+import { IconStack } from "./icons";
 
 /**
  * Collection folder tile, drawn as a small pile of prints: two offset,
@@ -40,7 +41,7 @@ export default function CollectionTile({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-3xl text-stone-600">
-              🗂
+              <IconStack />
             </div>
           )}
         </div>

@@ -50,3 +50,15 @@ must keep running on the **Cloudflare Workers Free plan**.
 - Verify each phase of work with the local dev server (`npm run dev`) before
   deploying. `npm run check` must pass.
 - Commit at the end of every phase of work with a message naming the phase.
+
+## Branding
+
+- The footer credit ("Designed by bzwrd") follows the bzwrd brand pack
+  (github.com/Zesty0wl/bzwrd-brand-pack, private): wordmark always lowercase, one
+  blinking Volt (#CCFF00) caret as the only accent, link to bzwrd.co.uk kept. Styles
+  live in styles.css under .bzwrd-credit; do not rebuild by hand.
+- bzwrd house style: no em dashes in any user-visible copy. Use a comma, colon, full
+  stop, or rephrase.
+- UI icons are inline SVGs extracted from GitHub Octicons (MIT) in
+  src/client/components/icons.tsx; no emoji glyphs in the UI. The app logo source is
+  brand/logo-source.png; regenerate PWA icons with scripts/mk-icons.sh.
