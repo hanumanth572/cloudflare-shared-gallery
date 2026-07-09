@@ -5,25 +5,25 @@ import ImageTile from "./ImageTile";
 /**
  * Responsive photo grid: 2 columns on narrow phones up to 6 on wide desktop,
  * with an IntersectionObserver sentinel for cursor-based infinite scroll.
+ * Tile presses bubble up with their index and shift state so the parent can
+ * open the lightbox, toggle selection, or select a shift-click range.
  */
 export default function ImageGrid({
   images,
-  onOpen,
+  onTilePress,
   hasMore,
   loading,
   onLoadMore,
   selectable = false,
   selectedIds,
-  onToggleSelect,
 }: {
   images: ApiImage[];
-  onOpen: (index: number) => void;
+  onTilePress: (index: number, opts: { shift: boolean }) => void;
   hasMore: boolean;
   loading: boolean;
   onLoadMore: () => void;
   selectable?: boolean;
   selectedIds?: Set<string>;
-  onToggleSelect?: (id: string) => void;
 }) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -47,10 +47,9 @@ export default function ImageGrid({
           <ImageTile
             key={image.id}
             image={image}
-            onOpen={() => onOpen(i)}
+            onPress={(opts) => onTilePress(i, opts)}
             selectable={selectable}
             selected={selectedIds?.has(image.id) ?? false}
-            onToggleSelect={() => onToggleSelect?.(image.id)}
           />
         ))}
         {loading &&

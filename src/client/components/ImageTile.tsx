@@ -9,16 +9,15 @@ export const TILE_SIZES =
 
 export default function ImageTile({
   image,
-  onOpen,
+  onPress,
   selectable = false,
   selected = false,
-  onToggleSelect,
 }: {
   image: ApiImage;
-  onOpen: () => void;
+  /** shift is true for shift-clicks (range selection). */
+  onPress: (opts: { shift: boolean }) => void;
   selectable?: boolean;
   selected?: boolean;
-  onToggleSelect?: () => void;
 }) {
   const [loaded, setLoaded] = useState(false);
 
@@ -27,7 +26,7 @@ export default function ImageTile({
   return (
     <button
       type="button"
-      onClick={selectable ? onToggleSelect : onOpen}
+      onClick={(e) => onPress({ shift: e.shiftKey })}
       aria-label={selectable ? `Select ${alt}` : `Open ${alt}`}
       aria-pressed={selectable ? selected : undefined}
       className={`group relative aspect-square w-full overflow-hidden rounded-lg bg-stone-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${

@@ -1,6 +1,7 @@
 import { useCallback, useState, type ReactNode } from "react";
 import type { Route } from "../lib/router";
-import { enqueueUploads } from "../lib/uploadQueue";
+import { enqueueUploads, type UploadBatch } from "../lib/uploadQueue";
+import BatchTagPrompt from "./BatchTagPrompt";
 import { getStoredDisplayName } from "../lib/user";
 import ViewSwitcher from "./ViewSwitcher";
 import SettingsMenu from "./SettingsMenu";
@@ -31,17 +32,27 @@ export default function Shell({
   children: ReactNode;
 }) {
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [tagPrompt, setTagPrompt] = useState<UploadBatch | null>(null);
 
-  const handleFiles = useCallback((files: File[]) => {
-    const images = files.filter((f) => f.type.startsWith("image/"));
-    if (images.length === 0) return;
-    // Attribution must be set before the first upload (PRD section 6).
-    if (!getStoredDisplayName()) {
-      setPendingFiles(images);
-      return;
-    }
-    enqueueUploads(images);
+  const startUpload = useCallback((images: File[]) => {
+    const batch = enqueueUploads(images);
+    // Multi-file uploads offer batch filing into a collection.
+    if (images.length >= 2) setTagPrompt(batch);
   }, []);
+
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const images = files.filter((f) => f.type.startsWith("image/"));
+      if (images.length === 0) return;
+      // Attribution must be set before the first upload (PRD section 6).
+      if (!getStoredDisplayName()) {
+        setPendingFiles(images);
+        return;
+      }
+      startUpload(images);
+    },
+    [startUpload],
+  );
 
   return (
     <div className="flex min-h-full flex-col bg-stone-950 text-stone-100">
@@ -109,10 +120,12 @@ export default function Shell({
           onDone={(name) => {
             const files = pendingFiles;
             setPendingFiles(null);
-            if (name && files) enqueueUploads(files);
+            if (name && files) startUpload(files);
           }}
         />
       )}
+
+      {tagPrompt && <BatchTagPrompt batch={tagPrompt} onClose={() => setTagPrompt(null)} />}
     </div>
   );
 }
