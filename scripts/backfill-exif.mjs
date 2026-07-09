@@ -12,10 +12,10 @@ import { writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { parseExif, EXIF_SCAN_BYTES } from "../src/worker/lib/exif.ts";
 
-const BASE = process.env.GALLERY_URL ?? "https://shared-gallery.jonnokid.workers.dev";
+const BASE = process.env.GALLERY_URL;
 const PASSWORD = process.env.GALLERY_PASSWORD;
-if (!PASSWORD) {
-  console.error("Set GALLERY_PASSWORD");
+if (!BASE || !PASSWORD) {
+  console.error("Set GALLERY_URL and GALLERY_PASSWORD");
   process.exit(1);
 }
 
