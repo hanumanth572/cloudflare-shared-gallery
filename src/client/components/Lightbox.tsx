@@ -37,6 +37,7 @@ export default function Lightbox({
   const [captionDraft, setCaptionDraft] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ dx: number; dy: number } | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -54,6 +55,7 @@ export default function Lightbox({
     setDetail(null);
     setEditingCaption(false);
     setConfirmingDelete(false);
+    setActionError(null);
     let cancelled = false;
     api
       .getImage(image.id)
@@ -123,8 +125,10 @@ export default function Lightbox({
       setDetail(updated);
       onImageUpdated(updated);
       setEditingCaption(false);
+      setActionError(null);
     } catch {
       // Keep the editor open so nothing typed is lost.
+      setActionError("Couldn't save the caption. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -145,6 +149,7 @@ export default function Lightbox({
       onImageDeleted(id);
     } catch {
       setConfirmingDelete(false);
+      setActionError("Couldn't delete the photo. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -320,6 +325,11 @@ export default function Lightbox({
           >
             {caption ?? <span className="text-stone-500">Add a caption…</span>}
           </button>
+        )}
+        {actionError && (
+          <p role="alert" className="mt-1 px-1 text-xs text-rose-400">
+            {actionError}
+          </p>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-stone-500">
           <span>Uploaded by {uploadedBy ?? "Unknown"}</span>
