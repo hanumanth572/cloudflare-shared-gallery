@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development (never commit .dev.vars).
+# Generate GALLERY_PASSWORD_HASH with: npm run hash-password -- "your password"
+JWT_SECRET="replace-with-32-plus-random-bytes"
+GALLERY_PASSWORD_HASH="pbkdf2$100000$replace$replace"
