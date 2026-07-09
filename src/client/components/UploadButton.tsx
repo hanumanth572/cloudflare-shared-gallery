@@ -14,21 +14,26 @@ export interface UploadItem {
 }
 
 /**
- * Multi-file upload control. `accept="image/*"` offers both camera capture
- * and the photo library on mobile. Uploads run sequentially with per-file
- * progress reported through onItems (rendered by UploadTray).
+ * Multi-file upload control. `accept="image/*"` opens the photo library
+ * with multi-select; `withCameraSheet` adds an action sheet offering direct
+ * camera capture (`capture="environment"`) on mobile. Uploads report
+ * per-file progress through onItems (rendered by UploadTray).
  */
 export default function UploadButton({
   onItems,
   className,
+  withCameraSheet = false,
   children,
 }: {
   onItems: (update: (prev: UploadItem[]) => UploadItem[]) => void;
   className?: string;
+  withCameraSheet?: boolean;
   children: ReactNode;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   function startUpload(files: File[]) {
     for (const file of files) {
@@ -50,13 +55,18 @@ export default function UploadButton({
             emit("images-changed");
           })
           .catch((err: unknown) => {
+            const offline = !navigator.onLine;
             onItems((prev) =>
               prev.map((i) =>
                 i.key === key
                   ? {
                       ...i,
                       status: "error",
-                      error: err instanceof Error ? err.message : "Upload failed",
+                      error: offline
+                        ? "You're offline — uploads need a connection"
+                        : err instanceof Error
+                          ? err.message
+                          : "Upload failed",
                       retry: run,
                     }
                   : i,
@@ -78,22 +88,70 @@ export default function UploadButton({
     startUpload(files);
   }
 
+  const inputProps = {
+    className: "hidden",
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFilesChosen(Array.from(e.target.files ?? []));
+      e.target.value = "";
+    },
+  };
+
   return (
     <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          onFilesChosen(Array.from(e.target.files ?? []));
-          e.target.value = "";
-        }}
-      />
-      <button type="button" onClick={() => inputRef.current?.click()} className={className}>
+      <input ref={libraryRef} type="file" accept="image/*" multiple {...inputProps} />
+      {withCameraSheet && (
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" {...inputProps} />
+      )}
+      <button
+        type="button"
+        onClick={() => (withCameraSheet ? setSheetOpen(true) : libraryRef.current?.click())}
+        className={className}
+      >
         {children}
       </button>
+
+      {sheetOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add photos"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSheetOpen(false);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-2xl border border-b-0 border-stone-800 bg-stone-900 p-3"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+          >
+            <button
+              onClick={() => {
+                setSheetOpen(false);
+                libraryRef.current?.click();
+              }}
+              className="block w-full min-h-12 rounded-xl px-4 text-left text-base text-stone-100 hover:bg-stone-800"
+            >
+              🖼️ Choose from library
+            </button>
+            <button
+              onClick={() => {
+                setSheetOpen(false);
+                cameraRef.current?.click();
+              }}
+              className="block w-full min-h-12 rounded-xl px-4 text-left text-base text-stone-100 hover:bg-stone-800"
+            >
+              📸 Take a photo
+            </button>
+            <button
+              onClick={() => setSheetOpen(false)}
+              className="mt-1 block w-full min-h-12 rounded-xl px-4 text-center text-sm text-stone-400 hover:bg-stone-800"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {pendingFiles && (
         <DisplayNamePrompt
           allowSkip={false}

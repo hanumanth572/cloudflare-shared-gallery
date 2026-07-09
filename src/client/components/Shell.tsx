@@ -4,6 +4,7 @@ import ViewSwitcher from "./ViewSwitcher";
 import SettingsMenu from "./SettingsMenu";
 import UploadButton, { type UploadItem } from "./UploadButton";
 import UploadTray from "./UploadTray";
+import OfflineBanner from "./OfflineBanner";
 
 /**
  * App chrome: compact top bar plus bottom navigation on mobile, single top
@@ -49,6 +50,7 @@ export default function Shell({
             <SettingsMenu onLoggedOut={onLoggedOut} />
           </div>
         </div>
+        <OfflineBanner />
       </header>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-3 pb-28 pt-3 sm:px-4 sm:pb-8">
@@ -64,6 +66,7 @@ export default function Shell({
           <ViewSwitcher route={route} onNavigate={onNavigate} orientation="bottom" />
           <UploadButton
             onItems={setUploads}
+            withCameraSheet
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-400 text-xl font-bold text-stone-950 shadow-lg hover:bg-amber-300"
           >
             <span aria-hidden>＋</span>
