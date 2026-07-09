@@ -117,6 +117,14 @@ export function deleteImage(id: string): Promise<void> {
   return request("DELETE", `/api/images/${encodeURIComponent(id)}`);
 }
 
+export function listDeleted(): Promise<ApiImage[]> {
+  return request("GET", "/api/images/deleted");
+}
+
+export function restoreImage(id: string): Promise<ApiImage> {
+  return request("POST", `/api/images/${encodeURIComponent(id)}/restore`);
+}
+
 /**
  * Uploads one image as a streamed body via XHR (fetch has no upload
  * progress). Resolves with the created image record.

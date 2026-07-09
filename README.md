@@ -58,6 +58,11 @@ thumbnails are aggressively cached so repeats are free). The in-app footer shows
 usage. If you outgrow a limit, the paid tiers are drop-in. Details and design
 constraints are in [docs/PRD.md](docs/PRD.md) and [AGENTS.md](AGENTS.md).
 
+Deletes are soft: photos sit in "Recently deleted" (Settings menu) for 30 days, where
+anyone can restore them, collections included. Nothing is permanently removed before
+then, so a leaked password or a bad day cannot destroy the gallery. D1 Time Travel
+(built into Cloudflare, 30 days) is a further metadata backstop.
+
 To log every device out, rotate the session key:
 `openssl rand -base64 32 | npx wrangler secret put JWT_SECRET`.
 

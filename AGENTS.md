@@ -51,6 +51,13 @@ must keep running on the **Cloudflare Workers Free plan**.
   deploying. `npm run check` must pass.
 - Commit at the end of every phase of work with a message naming the phase.
 
+## Deletion invariant
+
+- Image deletion is SOFT: routes must only ever set deleted_at/deleted_by. The one
+  hard-delete path is `purgeExpiredDeletions` (30-day lazy purge). Never add a
+  user-facing permanent delete; the recovery window is the defence against a leaked
+  shared password. All live queries must filter `deleted_at IS NULL`.
+
 ## Branding
 
 - The footer credit ("Designed by bzwrd") follows the bzwrd brand pack

@@ -1,5 +1,6 @@
 import type { Ctx, Router } from "../router";
 import { error, json } from "../lib/json";
+import { purgeExpiredDeletions } from "../db/queries";
 import type { ApiStats } from "../../shared/types";
 
 /** R2 Free plan storage allowance; the bucket holds originals only. */
@@ -25,8 +26,9 @@ async function updates(ctx: Ctx): Promise<Response> {
   const row = await ctx.env.DB.prepare(
     `SELECT
        (SELECT COUNT(*) FROM images
-        WHERE created_at > ?1 AND (uploaded_by IS NULL OR uploaded_by != ?2)) AS new_count,
-       (SELECT MAX(created_at) FROM images) AS latest
+        WHERE deleted_at IS NULL AND created_at > ?1
+          AND (uploaded_by IS NULL OR uploaded_by != ?2)) AS new_count,
+       (SELECT MAX(created_at) FROM images WHERE deleted_at IS NULL) AS latest
      `,
   )
     .bind(since, ctx.displayName ?? "")
@@ -44,9 +46,12 @@ async function updates(ctx: Ctx): Promise<Response> {
  * collections), and storage used against the Free-plan R2 limit.
  */
 async function stats(ctx: Ctx): Promise<Response> {
+  // The footer loads once per visit: a good cadence for the lazy purge.
+  ctx.exec.waitUntil(purgeExpiredDeletions(ctx.env.DB, ctx.env.BUCKET, Date.now()));
   const row = await ctx.env.DB.prepare(
     `SELECT
-       (SELECT COUNT(*) FROM images) AS image_count,
+       (SELECT COUNT(*) FROM images WHERE deleted_at IS NULL) AS image_count,
+       -- soft-deleted photos still occupy R2 until purged, so they count
        (SELECT COALESCE(SUM(size_bytes), 0) FROM images) AS bytes_used,
        (SELECT COUNT(*) FROM (
           SELECT uploaded_by AS name FROM images WHERE uploaded_by IS NOT NULL

@@ -19,6 +19,8 @@ interface ImageRow {
   uploaded_by: string | null;
   taken_at: number | null;
   camera: string | null;
+  deleted_at: number | null;
+  deleted_by: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -53,6 +55,8 @@ export function rowToImage(row: ImageRow): ApiImage {
     uploadedBy: row.uploaded_by,
     takenAt: row.taken_at,
     camera: row.camera,
+    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -143,7 +147,10 @@ export async function insertImage(db: D1Database, img: NewImage): Promise<void> 
 }
 
 export async function getImage(db: D1Database, id: string): Promise<ApiImage | null> {
-  const row = await db.prepare(`SELECT * FROM images WHERE id = ?`).bind(id).first<ImageRow>();
+  const row = await db
+    .prepare(`SELECT * FROM images WHERE id = ? AND deleted_at IS NULL`)
+    .bind(id)
+    .first<ImageRow>();
   return row ? rowToImage(row) : null;
 }
 
@@ -168,7 +175,7 @@ export async function listImages(
   const after = opts.cursor ? decodeCursor(opts.cursor) : null;
   const join =
     opts.filter === "untagged" ? `LEFT JOIN image_collections ic ON ic.image_id = i.id` : "";
-  const where: string[] = [];
+  const where: string[] = [`i.deleted_at IS NULL`];
   const binds: unknown[] = [];
   if (opts.filter === "untagged") where.push(`ic.image_id IS NULL`);
   if (opts.uploader) {
@@ -182,7 +189,7 @@ export async function listImages(
   binds.push(opts.limit + 1);
 
   const sql = `SELECT i.* FROM images i ${join}
-     ${where.length > 0 ? `WHERE ${where.join(" AND ")}` : ""}
+     WHERE ${where.join(" AND ")}
      ORDER BY i.created_at DESC, i.id DESC
      LIMIT ?`;
   const { results } = await db.prepare(sql).bind(...binds).all<ImageRow>();
@@ -212,13 +219,64 @@ export async function updateImageCaption(
   return res.meta.changes > 0;
 }
 
-/** Deletes the row (junction rows cascade) and returns the R2 key to clean up. */
-export async function deleteImage(db: D1Database, id: string): Promise<string | null> {
-  const row = await db
-    .prepare(`DELETE FROM images WHERE id = ? RETURNING r2_key`)
-    .bind(id)
-    .first<{ r2_key: string }>();
-  return row?.r2_key ?? null;
+/** How long soft-deleted photos stay recoverable before the lazy purge. */
+export const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Soft delete: marks the row and keeps both the R2 object and the junction
+ * rows, so a restore brings memberships back too. Nothing is destroyed here.
+ */
+export async function softDeleteImage(
+  db: D1Database,
+  id: string,
+  deletedBy: string | null,
+  now: number,
+): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `UPDATE images SET deleted_at = ?, deleted_by = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
+    )
+    .bind(now, deletedBy, now, id)
+    .run();
+  return res.meta.changes > 0;
+}
+
+export async function restoreImage(db: D1Database, id: string, now: number): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `UPDATE images SET deleted_at = NULL, deleted_by = NULL, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL`,
+    )
+    .bind(now, id)
+    .run();
+  return res.meta.changes > 0;
+}
+
+export async function listDeletedImages(db: D1Database): Promise<ApiImage[]> {
+  const { results } = await db
+    .prepare(`SELECT * FROM images WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC LIMIT 500`)
+    .all<ImageRow>();
+  return results.map(rowToImage);
+}
+
+/**
+ * Permanently removes photos whose recovery window has passed: R2 objects
+ * first (one bulk call), then the rows (junction rows cascade). Called
+ * opportunistically via waitUntil; the only hard-delete path in the app.
+ */
+export async function purgeExpiredDeletions(db: D1Database, bucket: R2Bucket, now: number): Promise<number> {
+  const cutoff = now - PURGE_AFTER_MS;
+  const { results } = await db
+    .prepare(`SELECT id, r2_key FROM images WHERE deleted_at IS NOT NULL AND deleted_at < ? LIMIT 50`)
+    .bind(cutoff)
+    .all<{ id: string; r2_key: string }>();
+  if (results.length === 0) return 0;
+  await bucket.delete(results.map((r) => r.r2_key));
+  const placeholders = results.map(() => "?").join(", ");
+  await db
+    .prepare(`DELETE FROM images WHERE id IN (${placeholders})`)
+    .bind(...results.map((r) => r.id))
+    .run();
+  return results.length;
 }
 
 export async function getImageMemberships(
@@ -254,10 +312,14 @@ export async function getImageMemberships(
 
 const COLLECTION_LIST_SQL = `
   SELECT c.*,
-    (SELECT COUNT(*) FROM image_collections ic WHERE ic.collection_id = c.id) AS member_count,
+    (SELECT COUNT(*) FROM image_collections ic
+     JOIN images i ON i.id = ic.image_id AND i.deleted_at IS NULL
+     WHERE ic.collection_id = c.id) AS member_count,
     COALESCE(
-      c.cover_image_id,
+      (SELECT c.cover_image_id FROM images ci
+       WHERE ci.id = c.cover_image_id AND ci.deleted_at IS NULL),
       (SELECT ic.image_id FROM image_collections ic
+       JOIN images i ON i.id = ic.image_id AND i.deleted_at IS NULL
        WHERE ic.collection_id = c.id
        ORDER BY ic.added_at DESC LIMIT 1)
     ) AS effective_cover_id
@@ -380,7 +442,7 @@ export async function listCollectionImages(
   const cursorWhere = after ? `AND (i.created_at < ?2 OR (i.created_at = ?2 AND i.id < ?3))` : "";
   const sql = `SELECT i.* FROM images i
      JOIN image_collections ic ON ic.image_id = i.id
-     WHERE ic.collection_id = ?1 ${cursorWhere}
+     WHERE ic.collection_id = ?1 AND i.deleted_at IS NULL ${cursorWhere}
      ORDER BY i.created_at DESC, i.id DESC
      LIMIT ${after ? "?4" : "?2"}`;
   const stmt = after

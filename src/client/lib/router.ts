@@ -6,7 +6,8 @@ export type Route =
   | { name: "photos" }
   | { name: "collections" }
   | { name: "collection"; id: string }
-  | { name: "uploader"; who: string };
+  | { name: "uploader"; who: string }
+  | { name: "deleted" };
 
 export function parsePath(pathname: string): Route {
   const parts = pathname.split("/").filter(Boolean);
@@ -18,6 +19,7 @@ export function parsePath(pathname: string): Route {
   if (parts[0] === "by" && parts[1]) {
     return { name: "uploader", who: decodeURIComponent(parts[1]) };
   }
+  if (parts[0] === "deleted") return { name: "deleted" };
   return { name: "root" };
 }
 
@@ -33,6 +35,8 @@ export function routePath(route: Route): string {
       return `/collections/${encodeURIComponent(route.id)}`;
     case "uploader":
       return `/by/${encodeURIComponent(route.who)}`;
+    case "deleted":
+      return "/deleted";
   }
 }
 

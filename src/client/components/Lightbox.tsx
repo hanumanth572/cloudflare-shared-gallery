@@ -260,7 +260,7 @@ export default function Lightbox({
           <button
             onClick={() => void deleteCurrent()}
             disabled={busy}
-            aria-label={confirmingDelete ? "Tap again to permanently delete" : "Delete photo"}
+            aria-label={confirmingDelete ? "Tap again to move to Recently deleted" : "Delete photo"}
             className={`flex h-11 items-center justify-center rounded-full px-3 text-lg hover:bg-white/10 ${
               confirmingDelete ? "bg-rose-600/80 text-sm font-medium text-white" : "w-11"
             }`}

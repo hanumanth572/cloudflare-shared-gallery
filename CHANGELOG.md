@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com); versions follow semver.
 
+## [1.3.0] - 2026-07-09
+
+### Added
+
+- Soft delete: deleting moves a photo to "Recently deleted" for 30 days; anyone can restore it, collection memberships included. Permanent removal happens only by time (lazy purge), so nothing is irrecoverable while the group is paying attention.
+- "New since your last visit": a banner and per-photo dots on each device, tracked with a localStorage watermark; your own uploads are excluded.
+
 ## [1.2.0] - 2026-07-09
 
 ### Added

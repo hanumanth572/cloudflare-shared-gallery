@@ -5,6 +5,7 @@ import Collections from "./views/Collections";
 import RootView from "./views/RootView";
 import CollectionDetail from "./views/CollectionDetail";
 import UploaderView from "./views/UploaderView";
+import RecentlyDeleted from "./views/RecentlyDeleted";
 import DisplayNamePrompt from "./components/DisplayNamePrompt";
 import OfflineBanner from "./components/OfflineBanner";
 import Shell from "./components/Shell";
@@ -58,6 +59,9 @@ export default function App() {
       )}
       {route.name === "uploader" && (
         <UploaderView who={route.who} onBack={() => navigate({ name: "photos" })} />
+      )}
+      {route.name === "deleted" && (
+        <RecentlyDeleted onBack={() => navigate({ name: "root" })} />
       )}
       {!namePromptDone && <DisplayNamePrompt onDone={() => setNamePromptDone(true)} />}
     </Shell>

@@ -10,11 +10,14 @@ import { extractDimensions, sniffImageType } from "../lib/imageMeta";
 import { EXIF_SCAN_BYTES, parseExif } from "../lib/exif";
 import {
   clampLimit,
-  deleteImage,
   getImage,
   getImageMemberships,
   insertImage,
+  listDeletedImages,
   listImages,
+  purgeExpiredDeletions,
+  restoreImage,
+  softDeleteImage,
   updateImageCaption,
 } from "../db/queries";
 import type { ApiImageDetail, ImageFilter } from "../../shared/types";
@@ -22,9 +25,12 @@ import type { ApiImageDetail, ImageFilter } from "../../shared/types";
 export function registerImageRoutes(router: Router): void {
   router.post("/api/images", upload);
   router.get("/api/images", list);
+  // Registered before :id so the literal path wins the match.
+  router.get("/api/images/deleted", deletedList);
   router.get("/api/images/:id", detail);
   router.patch("/api/images/:id", patch);
   router.delete("/api/images/:id", remove);
+  router.post("/api/images/:id/restore", restore);
 }
 
 /**
@@ -154,10 +160,27 @@ async function patch(ctx: Ctx): Promise<Response> {
   return detail(ctx);
 }
 
-/** DELETE /api/images/:id — removes the R2 object; junction rows cascade. */
+/**
+ * DELETE /api/images/:id — soft delete. The photo moves to Recently deleted
+ * (R2 object and collection memberships kept) and is only purged for real
+ * 30 days later. There is deliberately no user-facing permanent delete.
+ */
 async function remove(ctx: Ctx): Promise<Response> {
-  const r2Key = await deleteImage(ctx.env.DB, ctx.params.id);
-  if (!r2Key) return error("Image not found", 404);
-  await ctx.env.BUCKET.delete(r2Key);
+  const marked = await softDeleteImage(ctx.env.DB, ctx.params.id, ctx.displayName, Date.now());
+  if (!marked) return error("Image not found", 404);
   return noContent();
+}
+
+/** POST /api/images/:id/restore — bring a photo back from Recently deleted. */
+async function restore(ctx: Ctx): Promise<Response> {
+  const restored = await restoreImage(ctx.env.DB, ctx.params.id, Date.now());
+  if (!restored) return error("Image is not in Recently deleted", 404);
+  return json(await getImage(ctx.env.DB, ctx.params.id));
+}
+
+/** GET /api/images/deleted — Recently deleted, newest first. */
+async function deletedList(ctx: Ctx): Promise<Response> {
+  // Opportunistic purge of items past the recovery window; off the hot path.
+  ctx.exec.waitUntil(purgeExpiredDeletions(ctx.env.DB, ctx.env.BUCKET, Date.now()));
+  return json(await listDeletedImages(ctx.env.DB));
 }

@@ -19,6 +19,9 @@ export interface ApiImage {
   takenAt: number | null;
   /** EXIF camera make/model when the original carried one. */
   camera: string | null;
+  /** Set while the photo sits in Recently deleted (soft delete). */
+  deletedAt: number | null;
+  deletedBy: string | null;
   createdAt: number;
   updatedAt: number;
 }

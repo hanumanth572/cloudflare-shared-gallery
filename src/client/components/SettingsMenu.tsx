@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { logout } from "../lib/api";
+import { navigateTo } from "../lib/router";
 import { getStoredDisplayName } from "../lib/user";
 import DisplayNamePrompt from "./DisplayNamePrompt";
 import { IconGear } from "./icons";
@@ -50,6 +51,15 @@ export default function SettingsMenu({ onLoggedOut }: { onLoggedOut: () => void 
             className="block w-full min-h-11 rounded-lg px-3 text-left text-sm text-stone-200 hover:bg-stone-800"
           >
             Change display name
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigateTo({ name: "deleted" });
+            }}
+            className="block w-full min-h-11 rounded-lg px-3 text-left text-sm text-stone-200 hover:bg-stone-800"
+          >
+            Recently deleted
           </button>
           <button
             onClick={() => {
