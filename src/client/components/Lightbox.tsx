@@ -4,6 +4,7 @@ import * as api from "../lib/api";
 import {
   IconChevronLeft,
   IconChevronRight,
+  IconDeviceCamera,
   IconDownload,
   IconInfo,
   IconStack,
@@ -269,7 +270,6 @@ export default function Lightbox({
       </div>
 
       {/* Image area — backdrop tap closes, tap on image does not */}
-      <div className="flex min-h-0 flex-1">
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
       <div
         className="relative flex min-h-0 flex-1 items-center justify-center"
@@ -305,16 +305,17 @@ export default function Lightbox({
           <button
             onClick={next}
             aria-label="Next photo"
-            className="absolute right-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-xl text-white hover:bg-black/70 sm:flex"
+            className={`absolute top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-xl text-white transition-[right] duration-200 hover:bg-black/70 sm:flex ${
+              showInfo ? "sm:right-[356px]" : "right-2"
+            }`}
           >
             <IconChevronRight width="0.9em" height="0.9em" />
           </button>
         )}
-      </div>
 
-      {showInfo && (
-        <InfoPane image={image} detail={detail} onClose={() => setShowInfo(false)} />
-      )}
+        {showInfo && (
+          <InfoPane image={image} detail={detail} onClose={() => setShowInfo(false)} />
+        )}
       </div>
 
       {/* Caption + metadata */}
@@ -382,25 +383,20 @@ function formatBytes(n: number): string {
   return `${n} B`;
 }
 
-function formatWhen(ms: number): string {
-  return new Date(ms).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
-
-function InfoRow({ label, value }: { label: string; value: ReactNode }) {
+function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 py-2">
-      <dt className="text-[11px] uppercase tracking-widest text-stone-500">{label}</dt>
-      <dd className="text-sm text-stone-200">{value}</dd>
+    <div className="min-w-0">
+      <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-stone-500">
+        {label}
+      </div>
+      <div className="mt-0.5 truncate text-sm text-stone-200">{children}</div>
     </div>
   );
 }
 
 /**
- * Details pane: sidebar on desktop, bottom sheet on mobile. Toggled by the
- * info button or the "i" key while a photo is in full view.
+ * Details overlay: a floating glass card over the photo on desktop, a bottom
+ * sheet on mobile. Toggled by the info button or the "i" key.
  */
 function InfoPane({
   image,
@@ -413,68 +409,114 @@ function InfoPane({
 }) {
   const type = image.contentType.split("/")[1]?.toUpperCase() ?? image.contentType;
   const megapixels =
-    image.width && image.height ? (image.width * image.height) / 1_000_000 : null;
+    image.width && image.height
+      ? ((image.width * image.height) / 1_000_000).toFixed(1)
+      : null;
   const memberships = detail?.collections ?? [];
+  const taken = image.takenAt ? new Date(image.takenAt) : null;
 
   return (
     <aside
       aria-label="Photo details"
-      className="fixed inset-x-0 bottom-0 z-10 max-h-[55%] overflow-y-auto rounded-t-2xl border-t border-stone-800 bg-stone-950/95 pb-4 backdrop-blur sm:static sm:z-auto sm:max-h-none sm:w-80 sm:shrink-0 sm:overflow-y-auto sm:rounded-none sm:border-l sm:border-t-0 sm:bg-stone-950/80"
-      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+      className="sg-pane-in fixed inset-x-0 bottom-0 z-20 max-h-[60%] overflow-y-auto rounded-t-3xl border border-white/10 bg-stone-900/90 shadow-2xl backdrop-blur-xl sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-3 sm:top-3 sm:max-h-[calc(100%-1.5rem)] sm:w-[336px] sm:rounded-2xl"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex items-center justify-between px-4 pb-1 pt-3">
-        <h3 className="text-sm font-medium text-stone-300">Details</h3>
+      {/* Grab handle (mobile) */}
+      <div className="mx-auto mt-2 h-1 w-9 rounded-full bg-stone-700 sm:hidden" aria-hidden />
+
+      <div className="flex items-center justify-between px-5 pt-3 sm:pt-4">
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.18em] text-stone-400">
+          Details
+        </h3>
         <button
           onClick={onClose}
           aria-label="Close details"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-stone-400 hover:bg-white/10"
+          className="-mr-2 flex h-9 w-9 items-center justify-center rounded-full text-stone-400 hover:bg-white/10 hover:text-stone-200"
         >
-          <IconX width="0.8em" height="0.8em" />
+          <IconX width="0.75em" height="0.75em" />
         </button>
       </div>
-      <dl>
-        <InfoRow label="Taken" value={image.takenAt ? formatWhen(image.takenAt) : "Not recorded"} />
-        {image.camera && <InfoRow label="Camera" value={image.camera} />}
-        <InfoRow
-          label="Resolution"
-          value={
-            image.width && image.height ? (
-              <>
-                {image.width} × {image.height}
-                {megapixels !== null && (
-                  <span className="text-stone-500"> · {megapixels.toFixed(1)} MP</span>
-                )}
-              </>
-            ) : (
-              "Unknown"
-            )
-          }
-        />
-        <InfoRow label="File" value={`${type} · ${formatBytes(image.sizeBytes)}`} />
-        <InfoRow label="Filename" value={<span className="break-all">{image.originalName}</span>} />
-        <InfoRow
-          label="Uploaded"
-          value={`${formatWhen(image.createdAt)} by ${image.uploadedBy ?? "Unknown"}`}
-        />
-        {memberships.length > 0 && (
-          <InfoRow
-            label="Collections"
-            value={
-              <span className="flex flex-wrap gap-1.5">
-                {memberships.map((m) => (
-                  <span
-                    key={m.collectionId}
-                    className="rounded-md bg-stone-800 px-2 py-0.5 text-xs text-stone-300"
-                    title={`Tagged by ${m.addedBy ?? "Unknown"}`}
-                  >
-                    {m.name}
-                  </span>
-                ))}
-              </span>
-            }
-          />
+
+      {/* Capture: the headline fact */}
+      <div className="px-5 pb-4 pt-1">
+        {taken ? (
+          <>
+            <div className="text-lg font-semibold tracking-tight text-stone-100">
+              {taken.toLocaleDateString(undefined, {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </div>
+            <div className="mt-0.5 text-sm text-stone-400">
+              {taken.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+            </div>
+          </>
+        ) : (
+          <div className="text-lg font-semibold tracking-tight text-stone-500">
+            Capture date not recorded
+          </div>
         )}
-      </dl>
+        {image.camera && (
+          <div className="mt-2 flex items-center gap-2 text-sm text-stone-300">
+            <IconDeviceCamera className="shrink-0 text-stone-500" />
+            <span className="truncate">{image.camera}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="mx-5 border-t border-white/10" aria-hidden />
+
+      {/* Specs grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-4">
+        <Fact label="Resolution">
+          {image.width && image.height ? `${image.width} × ${image.height}` : "Unknown"}
+        </Fact>
+        <Fact label="Megapixels">{megapixels ? `${megapixels} MP` : "—"}</Fact>
+        <Fact label="Format">{type}</Fact>
+        <Fact label="File size">{formatBytes(image.sizeBytes)}</Fact>
+      </div>
+
+      <div className="mx-5 border-t border-white/10" aria-hidden />
+
+      {/* Provenance */}
+      <div className="flex flex-col gap-3 px-5 py-4">
+        <Fact label="Uploaded">
+          {new Date(image.createdAt).toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
+          <span className="text-stone-400"> by {image.uploadedBy ?? "Unknown"}</span>
+        </Fact>
+        <Fact label="Filename">
+          <span className="font-mono text-xs text-stone-300" title={image.originalName}>
+            {image.originalName}
+          </span>
+        </Fact>
+      </div>
+
+      {memberships.length > 0 && (
+        <>
+          <div className="mx-5 border-t border-white/10" aria-hidden />
+          <div className="px-5 py-4">
+            <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-stone-500">
+              Collections
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {memberships.map((m) => (
+                <span
+                  key={m.collectionId}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-stone-200"
+                  title={`Tagged by ${m.addedBy ?? "Unknown"}`}
+                >
+                  {m.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </aside>
   );
 }

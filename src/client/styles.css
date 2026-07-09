@@ -16,6 +16,42 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Details overlay entrance: slide up on mobile, drift in from the right on
+   desktop. Fast and precise; disabled under prefers-reduced-motion. */
+.sg-pane-in {
+  animation: sg-pane-in-up 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+@media (min-width: 640px) {
+  .sg-pane-in {
+    animation-name: sg-pane-in-side;
+  }
+}
+@keyframes sg-pane-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes sg-pane-in-side {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sg-pane-in {
+    animation: none;
+  }
+}
+
 /* bzwrd attribution, self-contained embed from the bzwrd brand pack (dark
    footer variant). Scoped bzwrd- class names, no external files or fonts. */
 .bzwrd-credit {
