@@ -1,0 +1,41 @@
+
+name: Cloudflare Shared Gallery - CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-check:
+    name: Install, Validate and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Cloudflare types
+        run: npm run cf-typegen
+
+      - name: Run TypeScript checks
+        run: npm run check
+
+      - name: Build application
+        run: npm run build
+
